@@ -734,7 +734,7 @@
         "signature": "7a7e8dec050f4ad9d6b093812a3a203acb13a32364079db20f7a6fde38f8427c"
       },
       "/users/ackerman/development/adi-jupyterlab/adi/src/index.ts": {
-        "version": "3215fa657a577d9d23f8fc92fc606086c9e0f302b880d98483aacf348b5c089a",
+        "version": "a3d1c964b2f7eafbcd8b880ecf001571ef2a5a973398de8042b8a84a22f8c238",
         "signature": "52e77666a253b6b80112cc29f54731c12fdd33faf62e821cbba32260d1bc51e7"
       }
     },
@@ -1574,7 +1574,8 @@
       "/users/ackerman/development/adi-jupyterlab/adi/src/index.ts": [
         "/users/ackerman/development/adi-jupyterlab/adi/node_modules/@jupyterlab/application/lib/index.d.ts",
         "/users/ackerman/development/adi-jupyterlab/adi/node_modules/@jupyterlab/apputils/lib/index.d.ts",
-        "/users/ackerman/development/adi-jupyterlab/adi/node_modules/@phosphor/widgets/lib/index.d.ts"
+        "/users/ackerman/development/adi-jupyterlab/adi/node_modules/@phosphor/widgets/lib/index.d.ts",
+        "/users/ackerman/development/adi-jupyterlab/adi/node_modules/@phosphor/messaging/lib/index.d.ts"
       ]
     },
     "exportedModulesMap": {
