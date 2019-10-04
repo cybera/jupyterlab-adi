@@ -20,7 +20,7 @@ const client = new ApolloClient({
 //   onIncrement: () => void;
 // };
 
-const DatasetList: React.FC/*<>*/ = () => {
+export const DatasetList: React.FC/*<>*/ = () => {
     return (
         <ApolloProvider client={client}>
             <div>My widget</div>
