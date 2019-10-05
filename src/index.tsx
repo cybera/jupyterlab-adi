@@ -1,24 +1,26 @@
 import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
+import { ISettingRegistry } from '@jupyterlab/coreutils';
 
 import { INotebookTools, INotebookTracker } from '@jupyterlab/notebook';
 
-import { Sidebar } from './sidebar'
+import { SidebarTool } from './sidebar'
 
 import '../style/index.css';
 
 function activate(
   app: JupyterFrontEnd,
   cellTools: INotebookTools,
-  notebook_Tracker: INotebookTracker
+  notebookTracker: INotebookTracker,
+  settingRegistry: ISettingRegistry
 ) {
-  const tagsTool = new Sidebar(notebook_Tracker, app);
-  cellTools.addItem({ tool: tagsTool, rank: 1.7 });
+  const sidebar = new SidebarTool(notebookTracker, app, settingRegistry);
+  cellTools.addItem({ tool: sidebar, rank: 1.7 });
 }
 
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab-adi',
   autoStart: true,
-  requires: [INotebookTools, INotebookTracker],
+  requires: [INotebookTools, INotebookTracker, ISettingRegistry],
   activate: activate
 };
 

@@ -1,0 +1,37 @@
+{
+  "title": "ADI",
+  "description": "ADI plugin settings.",
+  "definitions": {
+    "endpoint": {
+      "type": "string"
+    },
+    "organization": {
+      "type": "string"
+    },
+    "apiKey": {
+      "type": "string"
+    }
+  },
+  "properties": {
+    "endpoint": {
+      "title": "Endpoint",
+      "description": "The API endpoint for ADI",
+      "$ref": "#/definitions/endpoint",
+      "default": ""
+    },
+    "organization": {
+      "title": "Organization",
+      "description": "The organization you want to operate under",
+      "$ref": "#/definitions/organization",
+      "default": ""
+    },
+    "apiKey": {
+      "title": "API Key",
+      "description": "Your API key for communicating with ADI",
+      "$ref": "#/definitions/apiKey",
+      "default": ""
+    }
+  },
+  "additionalProperties": false,
+  "type": "object"
+}
