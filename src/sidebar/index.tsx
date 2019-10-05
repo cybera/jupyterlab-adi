@@ -31,20 +31,13 @@ export class SidebarTool extends NotebookTools.Tool {
     Private.setWidget(this)
     Private.renderSidebar()
 
-    this.settingRegistry = settingRegistry;
-    this.settingRegistry
+    settingRegistry
       .load('adi:plugin')
       .then((settings: ISettingRegistry.ISettings) => {
-        const configSettings = settings.composite as ConfigSettings
-
-        const client = new ApolloClient({
-          uri: configSettings.endpoint,
-          headers: {
-            'Authorization': `Api-Key ${configSettings.apiKey}`
-          }
-        });
-      
-        Private.renderSidebar(client, configSettings.organization)
+        settings.changed.connect(() => {
+          this.onSettingsChanged(settings);
+        })
+        this.onSettingsChanged(settings);
       })
   }
 
@@ -60,8 +53,20 @@ export class SidebarTool extends NotebookTools.Tool {
   protected onMetadataChanged(msg: ObservableJSON.ChangeMessage): void {
   }
 
+  private onSettingsChanged(settings: ISettingRegistry.ISettings) {
+    const configSettings = settings.composite as ConfigSettings
+
+    const client = new ApolloClient({
+      uri: configSettings.endpoint,
+      headers: {
+        'Authorization': `Api-Key ${configSettings.apiKey}`
+      }
+    });
+  
+    Private.renderSidebar(client, configSettings.organization)
+  }
+
   public notebookTracker!: INotebookTracker;
-  private settingRegistry!: ISettingRegistry;
   private widget!: SidebarWidget;
 }
 
