@@ -45,7 +45,8 @@
     "filbert": "^0.1.20",
     "graphql": "^14.5.8",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "react-dom": "^16.8.6",
+    "typeface-roboto": "^0.0.75"
   },
   "devDependencies": {
     "@types/react": "^16.8.6",

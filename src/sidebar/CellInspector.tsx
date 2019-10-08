@@ -6,6 +6,9 @@ import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
 import Grid from '@material-ui/core/Grid';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
 
 import { useMutation } from '@apollo/react-hooks';
 import { gql } from 'apollo-boost';
@@ -52,6 +55,7 @@ const useStyles = makeStyles((theme: Theme) =>
     transformationContainer: {
       display: 'flex',
       flexWrap: 'wrap',
+      marginBottom: theme.spacing(1)
     },
     textField: {
       width: '100%',
@@ -61,6 +65,11 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     inputs: {
       clear: 'both'
+    },
+    header: {
+      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(1),
+      marginTop: theme.spacing(2),
     }
   }),
 );
@@ -70,7 +79,9 @@ const CellInspector = ({ possibleTransformations, organization }:CellInspectorPr
 
   return (
     <div className={classes.container}>
-      <h1>TransformationInspector</h1>
+      <Typography variant="h5" color="textSecondary" gutterBottom className={classes.header}>
+        Transformations
+      </Typography>
       <div>
         {
           possibleTransformations.map(possibleTransformation => (
@@ -106,8 +117,10 @@ const CREATE_TRANSFORMATION = gql`
 `;
 
 const TransformationInspector = ({ possibleTransformation, organization }: TransformationInspectorProps) => {
+  const { inputs, functionBody, functionName } = possibleTransformation
+
   const [values, setValues] = useState<State>({
-    name: possibleTransformation.functionName,
+    name: functionName,
   });
   const classes = useStyles({});
   const [createTransformation] = useMutation<
@@ -115,16 +128,20 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
     CreateTransformationInput
   >(CREATE_TRANSFORMATION)
 
+  const inputDeclaration = inputs.map(input => `${input} = dataset_input('${input}')`).join('\n')
+
+  let transformationBody = functionBody;
+  if (transformationBody.startsWith('\n')) {
+    transformationBody = transformationBody.substring(1)
+  }
+  const transformationCode = `${inputDeclaration}\n\ndef transform():\n${transformationBody}`
+
+
   const handleChange = (name: keyof State) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [name]: event.target.value });
   }
 
   const handleCreateTransformation = (event: React.MouseEvent<HTMLButtonElement>) => {
-    const { inputs, functionBody } = possibleTransformation
-    const inputDeclaration = inputs.map(input => `${input} = dataset_input('${input}')\n`)
-
-    const transformationCode = `${inputDeclaration}\ndef transform():\n${functionBody}`
-
     createTransformation({ variables: {
       name: values.name,
       inputs: inputs,
@@ -134,43 +151,52 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
   }
 
   return (
-    <div className={classes.transformationContainer}>
-      <Grid container direction="column" spacing={1}>
-        <Grid item>
-          <TextField
-            id="outlined-name"
-            label="Name"
-            className={classes.textField}
-            value={values.name}
-            onChange={handleChange('name')}
-            margin="normal"
-            variant="filled"
-          />
+    <Card className={classes.transformationContainer} raised>
+      <CardContent>
+        <Grid container direction="column" spacing={1}>
+          <Grid item>
+            <TextField
+              id="outlined-name"
+              label="Name"
+              className={classes.textField}
+              value={values.name}
+              onChange={handleChange('name')}
+              margin="normal"
+              variant="filled"
+            />
+          </Grid>
+          <Grid item>
+            <Typography variant="h6" gutterBottom>
+              Inputs
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Grid container className={classes.inputs} direction="row" spacing={1}>
+              { possibleTransformation.inputs.map(input => (
+                <Grid item>
+                  <Chip label={input} variant="outlined" size="small" key={input} />
+                </Grid>
+              ))}
+            </Grid>
+          </Grid>
+          <Grid item>
+            <pre>
+              { transformationCode }
+            </pre>
+          </Grid>
         </Grid>
-        <Grid item>
-          <Typography variant="subtitle1" gutterBottom>
-            Inputs:
-          </Typography>
-        </Grid>
-        <Grid item>
-          <div className={classes.inputs}>
-            { possibleTransformation.inputs.map(input => (
-              <Chip label={input} variant="outlined" size="small" key={input} />
-            ))}
-          </div>
-        </Grid>
-        <Grid item>
-          <Button 
-            variant="contained"
-            color="primary"
-            className={classes.button}
-            onClick={handleCreateTransformation}
-          >
-            Create Transformation
-          </Button>
-        </Grid>
-      </Grid>
-    </div>
+      </CardContent>
+      <CardActions>
+        <Button 
+          variant="contained"
+          color="primary"
+          className={classes.button}
+          onClick={handleCreateTransformation}
+        >
+          Create Transformation
+        </Button>
+      </CardActions>
+    </Card>
   )
 }
 
