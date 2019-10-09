@@ -19,6 +19,11 @@ import { ConfigSettings } from '../settings'
 
 const ADI_TOOL_CLASS = 'jp-adi-Tools';
 
+interface TransformationMapping {
+  uuid: string
+}
+
+type TransformationMap = Record<string, TransformationMapping>
 
 export class SidebarTool extends NotebookTools.Tool {
   constructor(
@@ -48,8 +53,9 @@ export class SidebarTool extends NotebookTools.Tool {
 
   protected onActiveCellChanged(msg: Message): void {
     const activeCell = this.notebookTracker.activeCell;
-    const possibleTransformations = Private.possibleTransformations(activeCell);
-
+    const mapping = activeCell.model.metadata.get('adi_transformations') as unknown as TransformationMap | undefined
+    const possibleTransformations = Private.possibleTransformations(activeCell, mapping);
+    console.log(possibleTransformations)
     Private.renderSidebar(this.client, activeCell.id, {
       organization: this.organization,
       possibleTransformations
@@ -107,20 +113,30 @@ namespace Private {
     }
   }
 
-  export function possibleTransformations(cell: CodeCell): PossibleTransformation[];
-  export function possibleTransformations(cell: Cell): PossibleTransformation[];
+  export function possibleTransformations(cell: CodeCell, adiMapping:TransformationMap): PossibleTransformation[];
+  export function possibleTransformations(cell: Cell, adiMapping:TransformationMap): PossibleTransformation[];
 
-  export function possibleTransformations(cell: Cell): PossibleTransformation[] {
+  export function possibleTransformations(cell: Cell, adiMapping:TransformationMap): PossibleTransformation[] {
     if (cell instanceof CodeCell) {
         const cellContent = cell.model.value.text;
         const nodes = parse(cellContent, { ranges: true }).body as ASTNode[];
         const functions = nodes.filter(node => node.type === 'FunctionDeclaration')
-        return functions.map(f => ({
+        
+        return functions.map(f => {
+          const functionName = f.id.name
+          let uuid
+          if (adiMapping && functionName in adiMapping) {
+            uuid = adiMapping[functionName].uuid
+          }
+
+          return {
           fullCode: cellContent.substring(...f.range),
           inputs: f.params.map(p => p.name),
           functionBody: cellContent.substring(...(f.body as ASTNode).range),
-          functionName: f.id.name
-        }))
+            functionName,
+            uuid
+          }
+        })
       } else {
       return []
     }

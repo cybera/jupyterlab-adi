@@ -21,7 +21,8 @@ export interface PossibleTransformation {
   fullCode: string,
   inputs: string[],
   functionBody: string,
-  functionName: string
+  functionName: string,
+  uuid?: string
 }
 
 interface CreateTransformationInput {
@@ -117,7 +118,7 @@ const CREATE_TRANSFORMATION = gql`
 `;
 
 const TransformationInspector = ({ possibleTransformation, organization }: TransformationInspectorProps) => {
-  const { inputs, functionBody, functionName } = possibleTransformation
+  const { inputs, functionBody, functionName, uuid } = possibleTransformation
 
   const [values, setValues] = useState<State>({
     name: functionName,
@@ -144,10 +145,10 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
   const handleCreateTransformation = (event: React.MouseEvent<HTMLButtonElement>) => {
     createTransformation({
       variables: {
-      name: values.name,
-      inputs: inputs,
-      code: transformationCode,
-      organization
+        name: values.name,
+        inputs: inputs,
+        code: transformationCode,
+        organization
       }
     }).then(result => {
       console.log(result.data)
@@ -197,7 +198,7 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
           className={classes.button}
           onClick={handleCreateTransformation}
         >
-          Create Transformation
+          { uuid ? 'Update' : 'Create' } Transformation
         </Button>
       </CardActions>
     </Card>
