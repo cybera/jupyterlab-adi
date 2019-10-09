@@ -142,12 +142,16 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
   }
 
   const handleCreateTransformation = (event: React.MouseEvent<HTMLButtonElement>) => {
-    createTransformation({ variables: {
+    createTransformation({
+      variables: {
       name: values.name,
       inputs: inputs,
       code: transformationCode,
       organization
-    }})
+      }
+    }).then(result => {
+      console.log(result.data)
+    })
   }
 
   return (
