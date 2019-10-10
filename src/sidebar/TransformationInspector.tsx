@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
 import Grid from '@material-ui/core/Grid';
@@ -10,8 +9,13 @@ import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 
-import { useMutation } from '@apollo/react-hooks';
+import { Cell } from '@jupyterlab/cells';
+
+import { useMutation, useQuery } from '@apollo/react-hooks';
 import { gql } from 'apollo-boost';
+import { JSONObject } from '@phosphor/coreutils';
+
+import LongOpButton from '../common/LongOpButton'
 
 interface State {
   name: string;
@@ -34,12 +38,18 @@ export interface PossibleTransformation {
   inputs: string[],
   functionBody: string,
   functionName: string,
-  uuid?: string
+  uuid?: string,
+  index: number
 }
 
 interface TransformationInspectorProps {
   possibleTransformation: PossibleTransformation,
-  organization: string
+  organization: string,
+  cell: Cell
+}
+
+export interface TransformationMapping extends JSONObject {
+  uuid: string
 }
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -56,9 +66,6 @@ const useStyles = makeStyles((theme: Theme) =>
     textField: {
       width: '100%',
     },
-    button: {
-      margin: 0
-    },
     inputs: {
       clear: 'both'
     },
@@ -66,7 +73,7 @@ const useStyles = makeStyles((theme: Theme) =>
       marginLeft: theme.spacing(1),
       marginRight: theme.spacing(1),
       marginTop: theme.spacing(2),
-    }
+    },
   }),
 );
 
@@ -89,15 +96,16 @@ const CREATE_TRANSFORMATION = gql`
 	}
 `;
 
-const TransformationInspector = ({ possibleTransformation, organization }: TransformationInspectorProps) => {
-  const { inputs, functionBody, functionName, uuid } = possibleTransformation
+const TransformationInspector = ({ possibleTransformation, organization, cell }: TransformationInspectorProps) => {
+  const { inputs, functionBody, functionName, uuid: initUuid } = possibleTransformation
 
   const [values, setValues] = useState<State>({
     name: functionName,
   });
+  const [uuid, setUuid] = useState(initUuid)
   const classes = useStyles({});
   const [createTransformation] = useMutation<
-    Transformation,
+    { createTransformationTemplate: Transformation },
     CreateTransformationInput
   >(CREATE_TRANSFORMATION)
 
@@ -114,17 +122,22 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
     setValues({ ...values, [name]: event.target.value });
   }
 
-  const handleCreateTransformation = (event: React.MouseEvent<HTMLButtonElement>) => {
-    createTransformation({
+  const handleCreateTransformation = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    return createTransformation({
       variables: {
         name: values.name,
         inputs: inputs,
         code: transformationCode,
         organization
       }
-    }).then(result => {
-      console.log(result.data)
-    })
+    }).then(({ data }) => {
+      let mappings = cell.model.metadata.get('adi_transformations') as unknown as TransformationMapping[]
+      if (!mappings) { mappings = [] }
+      const { uuid } = data.createTransformationTemplate
+      mappings[possibleTransformation.index] = { uuid }
+      cell.model.metadata.set('adi_transformations', mappings)
+      setUuid(uuid)
+    })    
   }
 
   return (
@@ -150,8 +163,8 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
           <Grid item>
             <Grid container className={classes.inputs} direction="row" spacing={1}>
               { possibleTransformation.inputs.map(input => (
-                <Grid item>
-                  <Chip label={input} variant="outlined" size="small" key={input} />
+                <Grid item key={input}>
+                  <Chip label={input} variant="outlined" size="small" />
                 </Grid>
               ))}
             </Grid>
@@ -164,17 +177,53 @@ const TransformationInspector = ({ possibleTransformation, organization }: Trans
         </Grid>
       </CardContent>
       <CardActions>
-        <Button 
-          variant="contained"
-          color="primary"
-          className={classes.button}
-          onClick={handleCreateTransformation}
+        <LongOpButton 
+          handler={handleCreateTransformation}
         >
           { uuid ? 'Update' : 'Create' } Transformation
-        </Button>
+        </LongOpButton>
       </CardActions>
     </Card>
   )
 }
 
-export default TransformationInspector
+const TRANSFORMATION_INFO = gql`
+  query TransformationInfo($uuid: String, $organization:String) {
+    transformation(uuid: $uuid, org: { name: $organization }) {
+      name
+    }
+  }
+`
+const ConnectedTransformationInspector = (props: TransformationInspectorProps) => {
+  const { possibleTransformation, organization } = props
+  const { uuid } = possibleTransformation
+  // TODO: Could probably eliminate some of these extra components with useLazyQuery
+  // The only real reason for the separation is that we don't want to try grabbing
+  // the transformation info if we don't have a uuid in the metadata, but hooks can't
+  // be used anywhere but the top level of a component function. useLazyQuery could
+  // get around that because it doesn't fire right away, so we could conditionally
+  // fire it only if the uuid exists.
+  const { loading, error, data } = useQuery<{transformation:State},{uuid:string, organization: string}>(TRANSFORMATION_INFO, { 
+    variables: { 
+      uuid,
+      organization
+    }
+  })
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error!</div>
+
+  possibleTransformation.functionName = data.transformation.name
+
+  return <TransformationInspector {...props} />
+}
+
+const CheckExistsInspector = (props: TransformationInspectorProps) => {
+  if (props.possibleTransformation.uuid) {
+    return <ConnectedTransformationInspector {...props} />
+  } else {
+    return <TransformationInspector {...props} />
+  }
+}
+
+export default CheckExistsInspector

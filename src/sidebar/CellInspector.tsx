@@ -7,13 +7,9 @@ import { Cell, CodeCell } from '@jupyterlab/cells';
 import { parse, ASTNode } from 'filbert'
 
 import { SettingsContext } from '../common/SettingsContext'
-import TransformationInspector, { PossibleTransformation } from './TransformationInspector'
+import TransformationInspector, { PossibleTransformation, TransformationMapping } from './TransformationInspector'
 
-interface TransformationMapping {
-  uuid: string
-}
-
-type TransformationMap = Record<string, TransformationMapping>
+// type TransformationMap = Record<string, TransformationMapping>
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -35,9 +31,7 @@ const CellInspector = (props: { activeCell: Cell }) => {
   const { organization } = settings
   const { activeCell } = props
 
-  const mapping = activeCell.model.metadata.get('adi_transformations') as unknown as TransformationMap | undefined
-  const possibleTransformations = Private.possibleTransformations(activeCell, mapping);
-  console.log(possibleTransformations)
+  const possibleTransformations = Private.possibleTransformations(activeCell);
 
   return (
     <div className={classes.container}>
@@ -48,9 +42,10 @@ const CellInspector = (props: { activeCell: Cell }) => {
         {
           possibleTransformations.map(possibleTransformation => (
             <TransformationInspector 
-              key={possibleTransformation.functionName}
+              key={possibleTransformation.uuid || possibleTransformation.functionName}
               possibleTransformation={possibleTransformation}
               organization={organization}
+              cell={activeCell}
             />
           ))
         }
@@ -60,20 +55,22 @@ const CellInspector = (props: { activeCell: Cell }) => {
 }
 
 namespace Private {
-  export function possibleTransformations(cell: CodeCell, adiMapping:TransformationMap): PossibleTransformation[];
-  export function possibleTransformations(cell: Cell, adiMapping:TransformationMap): PossibleTransformation[];
+  export function possibleTransformations(cell: CodeCell): PossibleTransformation[];
+  export function possibleTransformations(cell: Cell): PossibleTransformation[];
 
-  export function possibleTransformations(cell: Cell, adiMapping:TransformationMap): PossibleTransformation[] {
+  export function possibleTransformations(cell: Cell): PossibleTransformation[] {
     if (cell instanceof CodeCell) {
         const cellContent = cell.model.value.text;
         const nodes = parse(cellContent, { ranges: true }).body as ASTNode[];
         const functions = nodes.filter(node => node.type === 'FunctionDeclaration')
-        
-        return functions.map(f => {
+
+        const mappings = cell.model.metadata.get('adi_transformations') as unknown as TransformationMapping[] | undefined
+
+        return functions.map((f, index) => {
           const functionName = f.id.name
           let uuid
-          if (adiMapping && functionName in adiMapping) {
-            uuid = adiMapping[functionName].uuid
+          if (mappings && index < mappings.length) {
+            uuid = mappings[index].uuid
           }
 
           return {
@@ -81,7 +78,8 @@ namespace Private {
             inputs: f.params.map(p => p.name),
             functionBody: cellContent.substring(...(f.body as ASTNode).range),
             functionName,
-            uuid
+            uuid,
+            index
           }
         })
       } else {
