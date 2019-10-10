@@ -5,7 +5,7 @@ import { ApolloProvider } from '@apollo/react-hooks';
 
 import { SettingsContext } from './SettingsContext';
 
-const ADIClient = (props:{ children:React.ReactElement }) => {
+const ADIClient = (props:{ children:any }) => {
   const settings = useContext(SettingsContext)
   const { children } = props
 

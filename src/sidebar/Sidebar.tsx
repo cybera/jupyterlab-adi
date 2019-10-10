@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 
 import { makeStyles, createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
@@ -12,7 +12,9 @@ import logo from '../../style/img/adi.png'
 
 import { JupyterSettings } from '../common/SettingsContext'
 import ADIClient from '../common/ADIClient'
-import Inspector from './Inspector'
+
+import JupyterCellInspector from '../common/JupyterCellInspector'
+import CellInspector from './CellInspector'
 
 // import DatasetList from './DatasetList'
 import { PossibleTransformation } from './TransformationInspector'
@@ -54,18 +56,14 @@ const useStyles = makeStyles((theme) => ({
 
 const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
 	const classes = useStyles({})
-			// 		<CellInspector 
-		// 			possibleTransformations={jpState.possibleTransformations}
-		// 			organization={jpState.organization}
-		// 		/>
-		// 		{/* <DatasetList organization={jpState.organization} /> */}
-
 	return (
 		<ThemeProvider theme={theme}>
 			<img src={logo} className={classes.logo} />
 			<JupyterSettings settingRegistry={settingsRegistry}>
 				<ADIClient>
-					<Inspector notebookTracker={notebookTracker} />
+					<JupyterCellInspector notebookTracker={notebookTracker}>
+						{ cell => <CellInspector activeCell={cell} />}
+					</JupyterCellInspector>
 				</ADIClient>
 			</JupyterSettings>
 		</ThemeProvider>
