@@ -33,36 +33,58 @@ const CellInspector = (props: { activeCell: Cell }) => {
 
   const possibleTransformations = Private.possibleTransformations(activeCell);
 
+  let transformationsBlock;
+  if (possibleTransformations instanceof Error)  {
+    transformationsBlock = (
+      <Typography variant="body1" color="textSecondary" gutterBottom className={classes.header}>
+        Can't parse transformations...
+      </Typography>
+    )
+  } else {
+    transformationsBlock = possibleTransformations.map(possibleTransformation => (
+      <TransformationInspector 
+        key={possibleTransformation.uuid || possibleTransformation.functionName}
+        possibleTransformation={possibleTransformation}
+        organization={organization}
+        cell={activeCell}
+      />
+    ))
+  } 
+
   return (
     <div className={classes.container}>
       <Typography variant="h5" color="textSecondary" gutterBottom className={classes.header}>
         Transformations
       </Typography>
       <div>
-        {
-          possibleTransformations.map(possibleTransformation => (
-            <TransformationInspector 
-              key={possibleTransformation.uuid || possibleTransformation.functionName}
-              possibleTransformation={possibleTransformation}
-              organization={organization}
-              cell={activeCell}
-            />
-          ))
-        }
+        { transformationsBlock }
       </div>
     </div>
   )
 }
 
 namespace Private {
-  export function possibleTransformations(cell: CodeCell): PossibleTransformation[];
-  export function possibleTransformations(cell: Cell): PossibleTransformation[];
+  export function possibleTransformations(cell: CodeCell): PossibleTransformation[] | Error;
+  export function possibleTransformations(cell: Cell): PossibleTransformation[] | Error;
 
-  export function possibleTransformations(cell: Cell): PossibleTransformation[] {
+  export function possibleTransformations(cell: Cell): PossibleTransformation[] | Error {
     if (cell instanceof CodeCell) {
         const cellContent = cell.model.value.text;
-        const nodes = parse(cellContent, { ranges: true }).body as ASTNode[];
-        const functions = nodes.filter(node => node.type === 'FunctionDeclaration')
+        
+        let functions:ASTNode[] = []
+
+        try {
+          const nodes = parse(cellContent, { ranges: true }).body as ASTNode[];
+          functions = nodes.filter(node => node.type === 'FunctionDeclaration')
+        } catch (error) {
+          // We expect to get the odd syntax error (especially while the user is
+          // typing!). We don't want to just break everything on those.
+          if (error.name === 'SyntaxError') {
+            return error
+          }
+
+          console.log(error)
+        }
 
         const mappings = cell.model.metadata.get('adi_transformations') as unknown as TransformationMapping[] | undefined
 
