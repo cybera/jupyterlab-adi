@@ -1,16 +1,21 @@
 import * as React from 'react';
 
-import ApolloClient from 'apollo-boost';
-import { ApolloProvider } from '@apollo/react-hooks';
 import { makeStyles, createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
+
+import { INotebookTracker } from '@jupyterlab/notebook';
+import { ISettingRegistry } from '@jupyterlab/coreutils';
 
 import 'typeface-roboto';
 
 import logo from '../../style/img/adi.png'
 
+import { JupyterSettings } from '../common/SettingsContext'
+import ADIClient from '../common/ADIClient'
+import Inspector from './Inspector'
+
 // import DatasetList from './DatasetList'
-import CellInspector, { PossibleTransformation } from './CellInspector'
+import { PossibleTransformation } from './TransformationInspector'
 
 export {
 	PossibleTransformation
@@ -22,8 +27,8 @@ export interface SidebarState {
 }
 
 interface SidebarProps {
-	client: ApolloClient<unknown>,
-	jpState: SidebarState
+	settingsRegistry: ISettingRegistry,
+	notebookTracker: INotebookTracker
 }
 
 const theme = createMuiTheme({
@@ -47,18 +52,22 @@ const useStyles = makeStyles((theme) => ({
 	}
 }))
 
-const Sidebar = ({ client, jpState }: SidebarProps) => {
+const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
 	const classes = useStyles({})
+			// 		<CellInspector 
+		// 			possibleTransformations={jpState.possibleTransformations}
+		// 			organization={jpState.organization}
+		// 		/>
+		// 		{/* <DatasetList organization={jpState.organization} /> */}
+
 	return (
 		<ThemeProvider theme={theme}>
-			<ApolloProvider client={client}>
-				<img src={logo} className={classes.logo} />
-				<CellInspector 
-					possibleTransformations={jpState.possibleTransformations}
-					organization={jpState.organization}
-				/>
-				{/* <DatasetList organization={jpState.organization} /> */}
-			</ApolloProvider>
+			<img src={logo} className={classes.logo} />
+			<JupyterSettings settingRegistry={settingsRegistry}>
+				<ADIClient>
+					<Inspector notebookTracker={notebookTracker} />
+				</ADIClient>
+			</JupyterSettings>
 		</ThemeProvider>
 	);
 }
