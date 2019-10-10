@@ -1,18 +1,14 @@
-import React, { useContext, ReactChild } from 'react';
+import React, { ReactChild } from 'react';
 
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { UseSignal } from '@jupyterlab/apputils';
 import { Cell } from '@jupyterlab/cells';
-import { SettingsContext } from '../common/SettingsContext'
 
 const ActiveCellContext = React.createContext(null)
 
 const ActiveCellInspector = (props:{cell:Cell, children:(cell:Cell)=>ReactChild}) => {
   const { cell, children } = props
-  console.log('my cell')
-  const settings = useContext(SettingsContext)
-  console.log('settings:')
-  console.log(settings)
+
   return (
     <UseSignal signal={cell.model.value.changed}>
       {
@@ -28,7 +24,6 @@ const ActiveCellInspector = (props:{cell:Cell, children:(cell:Cell)=>ReactChild}
 
 const Inspector = (props:{notebookTracker:INotebookTracker, children:(cell:Cell)=>ReactChild}) => {
   const { notebookTracker, children } = props
-  console.log('my component')
 
   return (
     <UseSignal signal={notebookTracker.activeCellChanged}>
