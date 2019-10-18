@@ -11,13 +11,13 @@ import CardContent from '@material-ui/core/CardContent';
 
 import { Cell } from '@jupyterlab/cells';
 
-import { useMutation, useQuery } from '@apollo/react-hooks';
+import { useMutation, useLazyQuery } from '@apollo/react-hooks';
 import { gql } from 'apollo-boost';
 import { JSONObject } from '@phosphor/coreutils';
 
 import LongOpButton from '../common/LongOpButton'
 
-interface State {
+interface EditableTransformationInfo {
   name: string;
 }
 
@@ -117,18 +117,84 @@ const UPDATE_TRANSFORMATION = gql`
   }
 `
 
+const TRANSFORMATION_INFO = gql`
+  query TransformationInfo($uuid: String, $organization:String) {
+    transformation(uuid: $uuid, org: { name: $organization }) {
+      name
+    }
+  }
+`
+
+/*
+  Hook for logic to check for an existing transformation and provide editable state for it.
+
+  Will return a tuple:
+
+  [ existingTransformation, transformationInfo, handleTransformationInfoChange ]
+
+  existingTransformation: true if the transformation was found, false otherwise
+  transformationInfo: stateful map (EditableTransformationInfo) of properties
+  handleTransformationInfoChange: function factory that creates an event handler given an 
+                                  EditableTransformationInfo property name
+
+  Example of using handleTransformationInfoChange:
+
+    handleTransformationInfoChange('name')
+
+  This will handle a change to a 'name' property of EditableTransformationInfo
+*/
+function useExistingTransformation(uuid: string, organization: string, defaults:EditableTransformationInfo): [
+  boolean,
+  EditableTransformationInfo,
+  (name: keyof EditableTransformationInfo) => (event: React.ChangeEvent<HTMLInputElement>) => void
+] {
+  const [checkForTransformation, setCheckForTransformation] = useState(true)
+  const [existingTransformation, setExistingTransformation] = useState(false)
+
+  const [transformationInfo, setTransformationInfo] = useState<EditableTransformationInfo>(defaults);
+
+  const [getTransformation] = useLazyQuery<
+    {transformation: EditableTransformationInfo},
+    {uuid: string, organization: string}
+  >(TRANSFORMATION_INFO, {
+    onCompleted: (data) => {
+      if (data.transformation) {
+        setTransformationInfo(data.transformation)
+        setExistingTransformation(true)
+      }
+    }
+  })
+
+  if (uuid && checkForTransformation) {
+    setCheckForTransformation(false)
+    getTransformation({ variables: { uuid, organization } })
+  }
+
+  const handleTransformationInfoChange = (name: keyof EditableTransformationInfo) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTransformationInfo({ ...transformationInfo, [name]: event.target.value });
+  }
+
+  return [existingTransformation, transformationInfo, handleTransformationInfoChange]
+}
+
 const TransformationInspector = ({ possibleTransformation, organization, cell }: TransformationInspectorProps) => {
   const { inputs, functionBody, functionName, uuid: initUuid } = possibleTransformation
 
-  const [values, setValues] = useState<State>({
-    name: functionName,
-  });
-  const [uuid, setUuid] = useState(initUuid)
   const classes = useStyles({});
+
+  const [uuid, setUuid] = useState(initUuid)
+
+  const [
+    existingTransformation,
+    transformationInfo,
+    handleTransformationInfoChange
+  ] = useExistingTransformation(uuid, organization, { name: functionName })
+
   const [createTransformation] = useMutation<
     { createTransformationTemplate: Transformation },
     CreateTransformationInput
   >(CREATE_TRANSFORMATION)
+
   const [updateTransformation] = useMutation<
     { updateTransformation: Transformation },
     UpdateTransformationInput
@@ -142,15 +208,10 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
   }
   const transformationCode = `${inputDeclaration}\n\ndef transform():\n${transformationBody}`
 
-
-  const handleChange = (name: keyof State) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [name]: event.target.value });
-  }
-
   const handleCreateTransformation = async (event: React.MouseEvent<HTMLButtonElement>): Promise<any> => {
     return createTransformation({
       variables: {
-        name: values.name,
+        name: transformationInfo.name,
         inputs: inputs,
         code: transformationCode,
         organization
@@ -170,12 +231,12 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
       variables: {
         uuid,
         fields: {
-          name: values.name,
+          name: transformationInfo.name,
           code: transformationCode,
           inputs
         }
       }
-    }).then()
+    })
   }
 
   return (
@@ -187,8 +248,8 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
               id="outlined-name"
               label="Name"
               className={classes.textField}
-              value={values.name}
-              onChange={handleChange('name')}
+              value={transformationInfo.name}
+              onChange={handleTransformationInfoChange('name')}
               margin="normal"
               variant="filled"
             />
@@ -216,52 +277,13 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
       </CardContent>
       <CardActions>
         <LongOpButton 
-          handler={uuid ? handleUpdateTransformation : handleCreateTransformation }
+          handler={existingTransformation ? handleUpdateTransformation : handleCreateTransformation }
         >
-          { uuid ? 'Update' : 'Create' } Transformation
+          { existingTransformation ? 'Update' : 'Create' } Transformation
         </LongOpButton>
       </CardActions>
     </Card>
   )
 }
 
-const TRANSFORMATION_INFO = gql`
-  query TransformationInfo($uuid: String, $organization:String) {
-    transformation(uuid: $uuid, org: { name: $organization }) {
-      name
-    }
-  }
-`
-const ConnectedTransformationInspector = (props: TransformationInspectorProps) => {
-  const { possibleTransformation, organization } = props
-  const { uuid } = possibleTransformation
-  // TODO: Could probably eliminate some of these extra components with useLazyQuery
-  // The only real reason for the separation is that we don't want to try grabbing
-  // the transformation info if we don't have a uuid in the metadata, but hooks can't
-  // be used anywhere but the top level of a component function. useLazyQuery could
-  // get around that because it doesn't fire right away, so we could conditionally
-  // fire it only if the uuid exists.
-  const { loading, error, data } = useQuery<{transformation:State},{uuid:string, organization: string}>(TRANSFORMATION_INFO, { 
-    variables: { 
-      uuid,
-      organization
-    }
-  })
-
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error!</div>
-
-  possibleTransformation.functionName = data.transformation.name
-
-  return <TransformationInspector {...props} />
-}
-
-const CheckExistsInspector = (props: TransformationInspectorProps) => {
-  if (props.possibleTransformation.uuid) {
-    return <ConnectedTransformationInspector {...props} />
-  } else {
-    return <TransformationInspector {...props} />
-  }
-}
-
-export default CheckExistsInspector
+export default TransformationInspector
