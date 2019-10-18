@@ -2,7 +2,6 @@
 
 A JupyterLab extension to interact with the ADI platform
 
-
 ## Prerequisites
 
 * JupyterLab
@@ -18,7 +17,7 @@ To install the development version (if you just want to use it),
 and then:
 
 ```bash
-cd /unzipped/folder
+cd /unzipped-folder/adi
 jupyter labextension install .
 ```
 
@@ -53,14 +52,14 @@ Note that it only shows up when the tab marked with the ![gear](docs/images/gear
 For a development install (requires npm version 4 or later), do the following in the repository directory:
 
 ```bash
-npm install
-npm run build
+jlpm install
+jlpm run build
 jupyter labextension link .
 ```
 
 To rebuild the package and the JupyterLab app:
 
 ```bash
-npm run build
+jlpm run build
 jupyter lab build
 ```
