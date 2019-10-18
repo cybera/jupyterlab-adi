@@ -16,9 +16,8 @@ const useStyles = makeStyles((theme: Theme) =>
       position: 'relative',
     },
     buttonSuccess: {
-      backgroundColor: green[500],
       '&:hover': {
-        backgroundColor: green[700],
+
       },
     },
     buttonProgress: {
@@ -32,7 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-export default function LongOpButton(props:{children: any, handler:(event: React.MouseEvent<HTMLButtonElement>) => Promise<void>}) {
+export default function LongOpButton(props:{children: any, handler:(event: React.MouseEvent<HTMLButtonElement>) => Promise<any>}) {
   const classes = useStyles({});
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -55,7 +54,10 @@ export default function LongOpButton(props:{children: any, handler:(event: React
       timer.current = setTimeout(() => {
         setLoading(false);
       }, 2000);
-      props.handler(event)
+      props.handler(event).then(() => {
+        setSuccess(true)
+        setLoading(false)
+      })
     }
   };
 

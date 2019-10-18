@@ -28,6 +28,15 @@ interface CreateTransformationInput {
   organization: string
 }
 
+interface UpdateTransformationInput {
+  uuid: string,
+  fields: {
+    name?: string
+    code?: string,
+    inputs?: string[]
+  }
+}
+
 interface Transformation {
   name: string,
   uuid: string
@@ -96,6 +105,18 @@ const CREATE_TRANSFORMATION = gql`
 	}
 `;
 
+const UPDATE_TRANSFORMATION = gql`
+  mutation UpdateTransformation(
+    $uuid: String!,
+    $fields: TransformationUpdate!
+  ) {
+    updateTransformation(uuid: $uuid, fields: $fields) {
+      name
+      uuid
+    }
+  }
+`
+
 const TransformationInspector = ({ possibleTransformation, organization, cell }: TransformationInspectorProps) => {
   const { inputs, functionBody, functionName, uuid: initUuid } = possibleTransformation
 
@@ -108,6 +129,10 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
     { createTransformationTemplate: Transformation },
     CreateTransformationInput
   >(CREATE_TRANSFORMATION)
+  const [updateTransformation] = useMutation<
+    { updateTransformation: Transformation },
+    UpdateTransformationInput
+  >(UPDATE_TRANSFORMATION)
 
   const inputDeclaration = inputs.map(input => `${input} = dataset_input('${input}')`).join('\n')
 
@@ -122,7 +147,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
     setValues({ ...values, [name]: event.target.value });
   }
 
-  const handleCreateTransformation = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleCreateTransformation = async (event: React.MouseEvent<HTMLButtonElement>): Promise<any> => {
     return createTransformation({
       variables: {
         name: values.name,
@@ -138,6 +163,19 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
       cell.model.metadata.set('adi_transformations', mappings)
       setUuid(uuid)
     })    
+  }
+
+  const handleUpdateTransformation = async (event: React.MouseEvent<HTMLButtonElement>): Promise<any> => {
+    return updateTransformation({
+      variables: {
+        uuid,
+        fields: {
+          name: values.name,
+          code: transformationCode,
+          inputs
+        }
+      }
+    }).then()
   }
 
   return (
@@ -178,7 +216,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
       </CardContent>
       <CardActions>
         <LongOpButton 
-          handler={handleCreateTransformation}
+          handler={uuid ? handleUpdateTransformation : handleCreateTransformation }
         >
           { uuid ? 'Update' : 'Create' } Transformation
         </LongOpButton>
