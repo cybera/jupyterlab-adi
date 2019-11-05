@@ -8,6 +8,7 @@ import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
+import ChipInput from 'material-ui-chip-input'
 
 import { Cell } from '@jupyterlab/cells';
 
@@ -18,14 +19,16 @@ import { JSONObject } from '@phosphor/coreutils';
 import LongOpButton from '../common/LongOpButton'
 
 interface EditableTransformationInfo {
-  name: string;
+  name?: string;
+  tagNames?: string[];
 }
 
 interface CreateTransformationInput {
   name: string,
   inputs: string[],
   code: string,
-  organization: string
+  tagNames?: string[],
+  organization: string,
 }
 
 interface UpdateTransformationInput {
@@ -33,13 +36,15 @@ interface UpdateTransformationInput {
   fields: {
     name?: string
     code?: string,
-    inputs?: string[]
+    inputs?: string[],
+    tagNames?: string[],
   }
 }
 
-interface Transformation {
-  name: string,
-  uuid: string
+interface TransformationOutput {
+  name?: string,
+  uuid?: string,
+  tags?: { name: string }[]
 }
 
 export interface PossibleTransformation {
@@ -61,6 +66,11 @@ export interface TransformationMapping extends JSONObject {
   uuid: string
 }
 
+type HandlerValue = React.ChangeEvent<HTMLInputElement> | any
+function isChangeEvent(value: HandlerValue): value is React.ChangeEvent<HTMLInputElement> {
+  return (value as React.ChangeEvent<HTMLInputElement>).target !== undefined;
+}
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     container: {
@@ -70,7 +80,10 @@ const useStyles = makeStyles((theme: Theme) =>
     transformationContainer: {
       display: 'flex',
       flexWrap: 'wrap',
-      marginBottom: theme.spacing(1)
+      marginBottom: theme.spacing(1),
+    },
+    transformationContainerContent: {
+      width: '100%',
     },
     textField: {
       width: '100%',
@@ -91,16 +104,21 @@ const CREATE_TRANSFORMATION = gql`
     $name: String!,
     $inputs: [String],
     $code: String,
-    $organization: String!
+    $organization: String!,
+    $tagNames: [String]
   ) {
 		createTransformationTemplate(
       name: $name, 
       inputs: $inputs,
       code: $code,
+      tagNames: $tagNames,
       owner: { name: $organization }
     ) {
 			name
 			uuid
+      tags {
+        name
+      }
 		}
 	}
 `;
@@ -113,6 +131,9 @@ const UPDATE_TRANSFORMATION = gql`
     updateTransformation(uuid: $uuid, fields: $fields) {
       name
       uuid
+      tags {
+        name
+      }
     }
   }
 `
@@ -121,9 +142,18 @@ const TRANSFORMATION_INFO = gql`
   query TransformationInfo($uuid: String, $organization:String) {
     transformation(uuid: $uuid, org: { name: $organization }) {
       name
+      tags {
+        name
+      }
     }
   }
 `
+
+function outputToEditableInfo(transformation: TransformationOutput): EditableTransformationInfo {
+  const { tags, ...rest } = transformation
+  const tagNames = tags.map((tag) => tag.name)
+  return { ...rest, tagNames }
+}
 
 /*
   Hook for logic to check for an existing transformation and provide editable state for it.
@@ -146,7 +176,7 @@ const TRANSFORMATION_INFO = gql`
 function useExistingTransformation(uuid: string, organization: string, defaults:EditableTransformationInfo): [
   boolean,
   EditableTransformationInfo,
-  (name: keyof EditableTransformationInfo) => (event: React.ChangeEvent<HTMLInputElement>) => void
+  (name: keyof EditableTransformationInfo) => (info: HandlerValue) => void
 ] {
   const [checkForTransformation, setCheckForTransformation] = useState(true)
   const [existingTransformation, setExistingTransformation] = useState(false)
@@ -154,15 +184,18 @@ function useExistingTransformation(uuid: string, organization: string, defaults:
   const [transformationInfo, setTransformationInfo] = useState<EditableTransformationInfo>(defaults);
 
   const [getTransformation] = useLazyQuery<
-    {transformation: EditableTransformationInfo},
+    {transformation: TransformationOutput},
     {uuid: string, organization: string}
   >(TRANSFORMATION_INFO, {
     onCompleted: (data) => {
       if (data.transformation) {
-        setTransformationInfo(data.transformation)
+        const editableTransformationInfo = outputToEditableInfo(data.transformation)
+        setTransformationInfo(editableTransformationInfo)
         setExistingTransformation(true)
       }
-    }
+    },
+    // TODO: Can we figure out how to not have to do this?
+    fetchPolicy: 'network-only'
   })
 
   if (uuid && checkForTransformation) {
@@ -170,8 +203,12 @@ function useExistingTransformation(uuid: string, organization: string, defaults:
     getTransformation({ variables: { uuid, organization } })
   }
 
-  const handleTransformationInfoChange = (name: keyof EditableTransformationInfo) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTransformationInfo({ ...transformationInfo, [name]: event.target.value });
+  const handleTransformationInfoChange = (name: keyof EditableTransformationInfo) => (info: HandlerValue) => {
+    if (isChangeEvent(info)) {
+      setTransformationInfo({ ...transformationInfo, [name]: info.target.value });
+    } else {
+      setTransformationInfo({ ...transformationInfo, [name]: info });
+    }
   }
 
   return [existingTransformation, transformationInfo, handleTransformationInfoChange]
@@ -191,12 +228,12 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
   ] = useExistingTransformation(uuid, organization, { name: functionName })
 
   const [createTransformation] = useMutation<
-    { createTransformationTemplate: Transformation },
+    { createTransformationTemplate: TransformationOutput },
     CreateTransformationInput
   >(CREATE_TRANSFORMATION)
 
   const [updateTransformation] = useMutation<
-    { updateTransformation: Transformation },
+    { updateTransformation: TransformationOutput },
     UpdateTransformationInput
   >(UPDATE_TRANSFORMATION)
 
@@ -214,6 +251,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
         name: transformationInfo.name,
         inputs: inputs,
         code: transformationCode,
+        tagNames: transformationInfo.tagNames,
         organization
       }
     }).then(({ data }) => {
@@ -229,11 +267,12 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
   const handleUpdateTransformation = async (event: React.MouseEvent<HTMLButtonElement>): Promise<any> => {
     return updateTransformation({
       variables: {
-        uuid,
+        uuid: uuid,
         fields: {
           name: transformationInfo.name,
           code: transformationCode,
-          inputs
+          inputs,
+          tagNames: transformationInfo.tagNames
         }
       }
     })
@@ -241,7 +280,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
 
   return (
     <Card className={classes.transformationContainer} raised>
-      <CardContent>
+      <CardContent className={classes.transformationContainerContent}>
         <Grid container direction="column" spacing={1}>
           <Grid item>
             <TextField
@@ -272,6 +311,16 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
             <pre>
               { transformationCode }
             </pre>
+          </Grid>
+          <Grid item>
+            <ChipInput
+              onChange={handleTransformationInfoChange('tagNames')}
+              defaultValue={transformationInfo.tagNames}
+              margin="normal"
+              fullWidth
+              fullWidthInput
+              label="Tags"
+            />
           </Grid>
         </Grid>
       </CardContent>
