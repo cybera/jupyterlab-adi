@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, ChangeEvent } from 'react'
 
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
@@ -8,7 +8,6 @@ import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
-import ChipInput from 'material-ui-chip-input'
 
 import { Cell } from '@jupyterlab/cells';
 
@@ -17,6 +16,7 @@ import { gql } from 'apollo-boost';
 import { JSONObject } from '@phosphor/coreutils';
 
 import LongOpButton from '../common/LongOpButton'
+import AutocompleteChipInput from '../common/AutocompleteChipInput'
 
 interface EditableTransformationInfo {
   name?: string;
@@ -66,10 +66,7 @@ export interface TransformationMapping extends JSONObject {
   uuid: string
 }
 
-type HandlerValue = React.ChangeEvent<HTMLInputElement> | any
-function isChangeEvent(value: HandlerValue): value is React.ChangeEvent<HTMLInputElement> {
-  return (value as React.ChangeEvent<HTMLInputElement>).target !== undefined;
-}
+type HandlerValue = ChangeEvent<HTMLInputElement | any>
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -203,11 +200,11 @@ function useExistingTransformation(uuid: string, organization: string, defaults:
     getTransformation({ variables: { uuid, organization } })
   }
 
-  const handleTransformationInfoChange = (name: keyof EditableTransformationInfo) => (info: HandlerValue) => {
-    if (isChangeEvent(info)) {
-      setTransformationInfo({ ...transformationInfo, [name]: info.target.value });
+  const handleTransformationInfoChange = (name: keyof EditableTransformationInfo) => (info: HandlerValue, value?:any) => {
+    if (value) {
+      setTransformationInfo({ ...transformationInfo, [name]: value });
     } else {
-      setTransformationInfo({ ...transformationInfo, [name]: info });
+      setTransformationInfo({ ...transformationInfo, [name]: info.target.value });
     }
   }
 
@@ -221,11 +218,18 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
 
   const [uuid, setUuid] = useState(initUuid)
 
+  // It's important to initialize these with appropriate values, as they set the
+  // initial state (including the type of values expected in updates)
+  const inspectorDefaults: EditableTransformationInfo = {
+    name: functionName,
+    tagNames: [],
+  }
+
   const [
     existingTransformation,
     transformationInfo,
     handleTransformationInfoChange
-  ] = useExistingTransformation(uuid, organization, { name: functionName })
+  ] = useExistingTransformation(uuid, organization, inspectorDefaults)
 
   const [createTransformation] = useMutation<
     { createTransformationTemplate: TransformationOutput },
@@ -313,13 +317,10 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
             </pre>
           </Grid>
           <Grid item>
-            <ChipInput
+            <AutocompleteChipInput 
+              value={transformationInfo.tagNames}
               onChange={handleTransformationInfoChange('tagNames')}
-              defaultValue={transformationInfo.tagNames}
-              margin="normal"
-              fullWidth
-              fullWidthInput
-              label="Tags"
+              options={['Float', 'String', 'Integer']}
             />
           </Grid>
         </Grid>
