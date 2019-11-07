@@ -2,15 +2,17 @@
 import React from 'react';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 interface InputProps {
   onChange: (event: React.ChangeEvent<{}>, value: any) => void;
   options: any[],
-  value: any
+  value: any,
+  loading?: boolean
 }
 
 
-export default function AutocompleteChipInput({ onChange, options, value }:InputProps) {
+const AutocompleteChipInput = ({ onChange, options, value, loading }:InputProps) => {
   return (
     <Autocomplete
       multiple
@@ -25,8 +27,24 @@ export default function AutocompleteChipInput({ onChange, options, value }:Input
           label="Tags"
           margin="normal"
           fullWidth
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
         />
       )}
     />
   );
 }
+
+export {
+  AutocompleteChipInput,
+  InputProps
+}
+
+export default AutocompleteChipInput

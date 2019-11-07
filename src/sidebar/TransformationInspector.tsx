@@ -16,7 +16,7 @@ import { gql } from 'apollo-boost';
 import { JSONObject } from '@phosphor/coreutils';
 
 import LongOpButton from '../common/LongOpButton'
-import AutocompleteChipInput from '../common/AutocompleteChipInput'
+import TagInput from '../common/TagInput'
 
 interface EditableTransformationInfo {
   name?: string;
@@ -317,10 +317,9 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
             </pre>
           </Grid>
           <Grid item>
-            <AutocompleteChipInput 
+            <TagInput 
               value={transformationInfo.tagNames}
               onChange={handleTransformationInfoChange('tagNames')}
-              options={['Float', 'String', 'Integer']}
             />
           </Grid>
         </Grid>
