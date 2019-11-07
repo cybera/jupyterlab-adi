@@ -30,9 +30,6 @@ const Inspector = (props:{notebookTracker:INotebookTracker, children:(cell:Cell)
       {
         (_, activeCell) => {
           if (activeCell) {
-            const selection_change = (activeCell.model.metadata.get('adi_selection_change') as number | undefined) || 0
-            activeCell.model.metadata.set('adi_selection_change', selection_change + 1)
-
             return (
               <ActiveCellInspector cell={activeCell} key={activeCell.model.id}>
                 { children }
