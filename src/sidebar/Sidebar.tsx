@@ -33,6 +33,11 @@ interface SidebarProps {
 	notebookTracker: INotebookTracker
 }
 
+declare global {
+	interface Window { extractTransformationUuidsExample: any }
+}
+
+
 const theme = createMuiTheme({
   palette: {
     primary: {
@@ -53,9 +58,29 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(1)
 	}
 }))
-
+type Transformation = {uuid:string}
 const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
-	const classes = useStyles({})
+	const classes = useStyles({});
+	console.log('current notebook:');
+	const notebookModel = notebookTracker.currentWidget.content.model;
+  console.log(notebookModel);
+	function extract(cells:any) {
+		let metaList:string[] = [];
+		const cellIter = cells.iter();
+		let cell = cellIter.next();
+		while(cell) {
+			const transformations = cell.metadata.get("adi_transformations") as Transformation[];
+			if (transformations) {
+				const uuids = transformations.map(t => t.uuid);
+				metaList = [...metaList, ...uuids];
+			}
+			cell = cellIter.next();
+		}
+		return metaList;
+	}
+
+	window.extractTransformationUuidsExample = () => extract(notebookModel.cells)
+
 	return (
 		<ThemeProvider theme={theme}>
 			<img src={logo} className={classes.logo} />
