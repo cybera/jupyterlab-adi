@@ -20,11 +20,13 @@ import TagInput from '../common/TagInput'
 
 interface EditableTransformationInfo {
   name?: string;
+  description?: string;
   tagNames?: string[];
 }
 
 interface CreateTransformationInput {
   name: string,
+  description: string,
   inputs: string[],
   code: string,
   tagNames?: string[],
@@ -35,6 +37,7 @@ interface UpdateTransformationInput {
   uuid: string,
   fields: {
     name?: string
+    description?: string,
     code?: string,
     inputs?: string[],
     tagNames?: string[],
@@ -99,19 +102,22 @@ const useStyles = makeStyles((theme: Theme) =>
 const CREATE_TRANSFORMATION = gql`
 	mutation CreateTransformation(
     $name: String!,
+    $description: String,
     $inputs: [String],
     $code: String,
     $organization: String!,
     $tagNames: [String]
   ) {
 		createTransformationTemplate(
-      name: $name, 
+      name: $name,
+      description: $description,
       inputs: $inputs,
       code: $code,
       tagNames: $tagNames,
       owner: { name: $organization }
     ) {
 			name
+                        description
 			uuid
       tags {
         name
@@ -128,6 +134,7 @@ const UPDATE_TRANSFORMATION = gql`
     updateTransformation(uuid: $uuid, fields: $fields) {
       name
       uuid
+      description
       tags {
         name
       }
@@ -139,6 +146,7 @@ const TRANSFORMATION_INFO = gql`
   query TransformationInfo($uuid: String, $organization:String) {
     transformation(uuid: $uuid, org: { name: $organization }) {
       name
+      description
       tags {
         name
       }
@@ -253,6 +261,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
     return createTransformation({
       variables: {
         name: transformationInfo.name,
+        description: transformationInfo.description,
         inputs: inputs,
         code: transformationCode,
         tagNames: transformationInfo.tagNames,
@@ -274,6 +283,7 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
         uuid: uuid,
         fields: {
           name: transformationInfo.name,
+          description: transformationInfo.description,
           code: transformationCode,
           inputs,
           tagNames: transformationInfo.tagNames
@@ -315,6 +325,18 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
             <pre>
               { transformationCode }
             </pre>
+          </Grid>
+          <Grid item>
+            <TextField
+              id="description"
+              label="Description"
+              className={classes.textField}
+              value={transformationInfo.description ? transformationInfo.description : ''}
+              onChange={handleTransformationInfoChange('description')}
+              margin="normal"
+              InputLabelProps={transformationInfo.description ? { shrink: true } : { shrink: false }}
+              multiline
+            />
           </Grid>
           <Grid item>
             <TagInput 
