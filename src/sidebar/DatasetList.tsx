@@ -17,12 +17,12 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 const DATASET_LIST = gql`
-	query DatasetList($organization: String) {
-		dataset(org: { name: $organization }) {
-			name
-			uuid
-		}
-	}
+query DatasetList($organization: String) {
+  dataset(org: { name: $organization }) {
+    name
+    uuid
+  }
+}
 `;
 
 interface Dataset {
@@ -31,7 +31,7 @@ interface Dataset {
 }
 
 interface DatasetData {
-	dataset: Dataset[]
+  dataset: Dataset[]
 }
 
 interface DatasetListProps {
@@ -43,32 +43,32 @@ interface DatasetListVars {
 }
 
 const DatasetList = ({ organization }:DatasetListProps) => {
-	const { loading, error, data } = useQuery<DatasetData, DatasetListVars>(
+  const { loading, error, data } = useQuery<DatasetData, DatasetListVars>(
     DATASET_LIST,
     { variables: { organization } }
   )
   const classes = useStyles({})
 
-	if (loading) return <p>Loading...</p>
-	if (error) return <p>Error :(</p>
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error :(</p>
 
-	return (
+  return (
     <div>
       <Typography variant="subtitle1" gutterBottom className={classes.title}>
         Datasets
       </Typography>
       <List dense>
         { data && data.dataset.map(dataset => (
-          <ListItem key={dataset.uuid}>
-            <ListItemText
-            primary={dataset.name}
-            secondary={dataset.uuid}
-            />
-          </ListItem>
+ 	 <ListItem key={dataset.uuid}>
+ 	   <ListItemText
+ 	     primary={dataset.name}
+ 	     secondary={dataset.uuid}
+ 	   />
+ 	 </ListItem>
         ))}
       </List>
     </div>
-	)
+  )
 }
 
 export default DatasetList

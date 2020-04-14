@@ -20,7 +20,7 @@ import CellInspector from './CellInspector'
 import { PossibleTransformation } from './TransformationInspector'
 
 export {
-	PossibleTransformation
+  PossibleTransformation
 }
 
 export interface SidebarState {
@@ -29,8 +29,8 @@ export interface SidebarState {
 }
 
 interface SidebarProps {
-	settingsRegistry: ISettingRegistry,
-	notebookTracker: INotebookTracker
+  settingsRegistry: ISettingRegistry,
+  notebookTracker: INotebookTracker
 }
 
 const theme = createMuiTheme({
@@ -55,19 +55,19 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
-	const classes = useStyles({})
-	return (
-		<ThemeProvider theme={theme}>
-			<img src={logo} className={classes.logo} />
-			<JupyterSettings settingRegistry={settingsRegistry}>
-				<ADIClient>
-					<JupyterCellInspector notebookTracker={notebookTracker}>
-						{ cell => <CellInspector activeCell={cell} />}
-					</JupyterCellInspector>
-				</ADIClient>
-			</JupyterSettings>
-		</ThemeProvider>
-	);
+  const classes = useStyles({})
+  return (
+    <ThemeProvider theme={theme}>
+      <img src={logo} className={classes.logo} />
+      <JupyterSettings settingRegistry={settingsRegistry}>
+	<ADIClient>
+	  <JupyterCellInspector notebookTracker={notebookTracker}>
+	    { cell => <CellInspector activeCell={cell} />}
+	  </JupyterCellInspector>
+	</ADIClient>
+      </JupyterSettings>
+    </ThemeProvider>
+  );
 }
 
 export default Sidebar
