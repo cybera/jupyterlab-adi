@@ -11,12 +11,13 @@ import 'typeface-roboto';
 import logo from '../../style/img/adi.png'
 
 import { JupyterSettings } from '../common/SettingsContext'
+
 import ADIClient from '../common/ADIClient'
 
 import JupyterCellInspector from '../common/JupyterCellInspector'
 import CellInspector from './CellInspector'
 
-// import DatasetList from './DatasetList'
+import DatasetList from './DatasetList'
 import { PossibleTransformation } from './TransformationInspector'
 
 export {
@@ -56,6 +57,7 @@ const useStyles = makeStyles((theme) => ({
 
 const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
   const classes = useStyles({})
+
   return (
     <ThemeProvider theme={theme}>
       <img src={logo} className={classes.logo} />
@@ -64,6 +66,7 @@ const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
 	  <JupyterCellInspector notebookTracker={notebookTracker}>
 	    { cell => <CellInspector activeCell={cell} />}
 	  </JupyterCellInspector>
+	  <DatasetList />
 	</ADIClient>
       </JupyterSettings>
     </ThemeProvider>
