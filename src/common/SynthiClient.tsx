@@ -5,7 +5,7 @@ import { ApolloProvider } from '@apollo/react-hooks';
 
 import { SettingsContext } from './SettingsContext';
 
-const ADIClient = (props:{ children:any }) => {
+const SynthiClient = (props:{ children:any }) => {
   const settings = useContext(SettingsContext)
   const { children } = props
 
@@ -23,4 +23,4 @@ const ADIClient = (props:{ children:any }) => {
   )
 }
 
-export default ADIClient
+export default SynthiClient

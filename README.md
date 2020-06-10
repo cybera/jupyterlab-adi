@@ -1,6 +1,6 @@
-# adi
+# Synthi
 
-A JupyterLab extension to interact with the ADI platform
+A JupyterLab extension to interact with the Synthi platform
 
 ## Prerequisites
 
@@ -9,15 +9,15 @@ A JupyterLab extension to interact with the ADI platform
 ## Installation
 
 ```bash
-jupyter labextension install adi
+jupyter labextension install synthi
 ```
 
 To install the development version (if you just want to use it),
-[download and unzip the latest jupyterlab-adi code](https://github.com/cybera/jupyterlab-adi/archive/master.zip)
+[download and unzip the latest jupyterlab-synthi code](https://github.com/cybera/jupyterlab-synthi/archive/master.zip)
 and then:
 
 ```bash
-cd /unzipped-folder/adi
+cd /unzipped-folder/synthi
 jupyter labextension install .
 ```
 
@@ -28,11 +28,11 @@ your browser to get the new plugin.
 
 You need to set an endpoint, an apiKey, and an organization for this plugin.
 You can do that via: `Settings`=>`Advanced Settings Editor` in the menu. Then
-select `ADI` and set the following under "User Preferences":
+select `Synthi` and set the following under "User Preferences":
 
 ```json
 {
-    "endpoint": "https://staging.adi2.data.cybera.ca/graphql",
+    "endpoint": "https://<your_url>/graphql",
     "apiKey": "your-api-key",
     "organization": "your-org-name"
 }

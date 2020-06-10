@@ -1,18 +1,17 @@
 import React from 'react';
 
-import { makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import { createStyles, makeStyles, createMuiTheme, Theme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
+import Typography from '@material-ui/core/Typography';
 
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/coreutils';
 
 import 'typeface-roboto';
 
-import logo from '../../style/img/adi.png'
-
 import { JupyterSettings } from '../common/SettingsContext'
 
-import ADIClient from '../common/ADIClient'
+import SynthiClient from '../common/SynthiClient'
 
 import JupyterCellInspector from '../common/JupyterCellInspector'
 import CellInspector from './CellInspector'
@@ -48,26 +47,31 @@ const theme = createMuiTheme({
   },
 });
 
-const useStyles = makeStyles((theme) => ({
-  logo: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1)
-	}
-}))
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    header: {
+      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(1),
+      marginTop: theme.spacing(2),
+    }
+  }),
+);
 
 const Sidebar = ({ settingsRegistry, notebookTracker }: SidebarProps) => {
-  const classes = useStyles({})
+  const classes = useStyles({});
 
   return (
     <ThemeProvider theme={theme}>
-      <img src={logo} className={classes.logo} />
+      <Typography variant="h3" className={classes.header}>
+	Synthi
+      </Typography>
       <JupyterSettings settingRegistry={settingsRegistry}>
-	<ADIClient>
+	<SynthiClient>
 	  <JupyterCellInspector notebookTracker={notebookTracker}>
 	    { cell => <CellInspector activeCell={cell} />}
 	  </JupyterCellInspector>
 	  <DatasetList />
-	</ADIClient>
+	</SynthiClient>
       </JupyterSettings>
     </ThemeProvider>
   );

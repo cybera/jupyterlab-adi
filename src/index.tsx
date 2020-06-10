@@ -18,7 +18,7 @@ function activate(
 }
 
 const extension: JupyterFrontEndPlugin<void> = {
-  id: 'jupyterlab-adi',
+  id: 'jupyterlab-synthi',
   autoStart: true,
   requires: [INotebookTools, INotebookTracker, ISettingRegistry],
   activate: activate

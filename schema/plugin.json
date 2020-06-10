@@ -1,6 +1,6 @@
 {
-  "title": "ADI",
-  "description": "ADI plugin settings.",
+  "title": "Synthi",
+  "description": "Synthi plugin settings.",
   "definitions": {
     "endpoint": {
       "type": "string"
@@ -15,7 +15,7 @@
   "properties": {
     "endpoint": {
       "title": "Endpoint",
-      "description": "The API endpoint for ADI",
+      "description": "The API endpoint for Synthi",
       "$ref": "#/definitions/endpoint",
       "default": ""
     },
@@ -27,7 +27,7 @@
     },
     "apiKey": {
       "title": "API Key",
-      "description": "Your API key for communicating with ADI",
+      "description": "Your API key for communicating with Synthi",
       "$ref": "#/definitions/apiKey",
       "default": ""
     }

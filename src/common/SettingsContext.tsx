@@ -24,7 +24,7 @@ const JupyterSettings = (props:{
       {
         (_, args) => {
           settingRegistry
-            .load('adi:plugin')
+            .load('synthi:plugin')
             .then((iSettings: ISettingRegistry.ISettings) => {
               setSettings(iSettings.composite as ConfigSettings)
             })

@@ -86,7 +86,7 @@ namespace Private {
           console.log(error)
         }
 
-        const mappings = cell.model.metadata.get('adi_transformations') as unknown as TransformationMapping[] | undefined
+        const mappings = cell.model.metadata.get('synthi_transformations') as unknown as TransformationMapping[] | undefined
 
         return functions.map((f, index) => {
           const functionName = f.id.name

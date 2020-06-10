@@ -268,11 +268,11 @@ const TransformationInspector = ({ possibleTransformation, organization, cell }:
         organization
       }
     }).then(({ data }) => {
-      let mappings = cell.model.metadata.get('adi_transformations') as unknown as TransformationMapping[]
+      let mappings = cell.model.metadata.get('synthi_transformations') as unknown as TransformationMapping[]
       if (!mappings) { mappings = [] }
       const { uuid } = data.createTransformationTemplate
       mappings[possibleTransformation.index] = { uuid }
-      cell.model.metadata.set('adi_transformations', mappings)
+      cell.model.metadata.set('synthi_transformations', mappings)
       setUuid(uuid)
     })    
   }

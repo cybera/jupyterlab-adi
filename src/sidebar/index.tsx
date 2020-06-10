@@ -9,7 +9,7 @@ import { PanelLayout } from '@phosphor/widgets';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 import { ISettingRegistry } from '@jupyterlab/coreutils';
 
-const ADI_TOOL_CLASS = 'jp-adi-Tools';
+const SYNTHI_TOOL_CLASS = 'jp-adi-Tools';
 
 export class SidebarTool extends NotebookTools.Tool {
   constructor(
@@ -20,7 +20,7 @@ export class SidebarTool extends NotebookTools.Tool {
     super();
 
     let layout = (this.layout = new PanelLayout());
-    this.addClass(ADI_TOOL_CLASS);
+    this.addClass(SYNTHI_TOOL_CLASS);
     const widget = new SidebarWidget(notebookTracker, settingRegistry)
     layout.addWidget(widget);
   }
